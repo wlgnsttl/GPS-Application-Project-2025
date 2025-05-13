@@ -1,6 +1,4 @@
 # GPS25
 GPS Doppler PNT Project
 
-꼮꼬꼮ㄲ꼮꼬꼮
-
-pull 한 다음 push할 것
+![image](https://github.com/user-attachments/assets/d683759d-82b0-473c-9fba-de44d4b18adb)
