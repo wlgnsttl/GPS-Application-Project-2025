@@ -1,6 +1,6 @@
 function [nmea_data] = ReadNMEA(filename, option)
 %GGA Data: 
-%[UTC, latitude, longitude, gps_quality_indicator, nums_of_sat, HDOP, altitude, geoidal_separation, age_of_diff, diff_station_id]
+%[UTC, latitude 위도, longitude 경도, gps_quality_indicator, nums_of_sat, HDOP, altitude, geoidal_separation, age_of_diff, diff_station_id]
 
     % 파일 열기
     fid = fopen(filename, 'r');
@@ -32,7 +32,7 @@ end
 
 function [GGA_data] = readGGA(GGA_line)
 %gga_line 슬라이싱
-GGA_line = GGA_line(strfind(GGA_line, '$'):end);
+GGA_line = GGA_line(strfind(GGA_line, 'GGA'):end);
 GGA_line = split(GGA_line, ',')';
 
 %데이터 분류
@@ -76,7 +76,7 @@ GGA_data = [UTC, latitude, longitude, gps_quality_indicator, nums_of_sat, HDOP, 
 end
 
 function [GSA_data] = readGSA(GSA_line)
-GSA_line = GSA_line(strfind(GSA_line, '$'):end);
+GSA_line = GSA_line(strfind(GSA_line, 'GSA'):end);
 GSA_line = split(GSA_line, ',')';
 
 if GSA_line{2} == 'A'
