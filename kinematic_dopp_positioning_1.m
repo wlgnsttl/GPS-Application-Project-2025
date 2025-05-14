@@ -4,9 +4,12 @@ clc;
 addpath(genpath("data\"));
 addpath(genpath("functions\"));
 
-load('QM_drivedata_2025115_1.mat');
+load('QM_RTAP1_250425_0659.mat');
 load('eph_25115_1.mat');
-load('Pos_TruePos_drivedata_2025115_1.mat');
+load('TruePos_RTAP1_250425_0659.mat');
+
+TruePos = TruePos(:,2:4);
+TrueVel = [0 0 0; diff(TruePos)];
 
 %% 상수, 변수 정의
 
@@ -27,7 +30,7 @@ FinalTTs = unique(QM(:,1));
 
 MaxIter = 5;
 EpsStop = 1e-5; 
-x = [TruePos(1,2:4) 0 0 0 0]; 
+x = [TruePos(1,:) 0 0 0 0]; 
 x = x';
 
 %% 추정과정 시작
@@ -115,8 +118,8 @@ TTs = estm(:, 1);
 XYZ = estm(:, 2:4);
 VXYZ = estm(:, 5:7);
 
-NEV = xyz2topo2(XYZ, TruePos);
-VNEV = xyz2topo2(VXYZ, [0 0 0]);
+NEV = xyz2topo3(XYZ, TruePos);
+VNEV = xyz2topo3(VXYZ, TrueVel);
 
 [rmse, horErr, verErr, dim3Err] = nev2rmse(NEV);
 
@@ -125,12 +128,3 @@ VNEV = xyz2topo2(VXYZ, [0 0 0]);
 close all; clc;
 PlotRMSE(TTs, NEV, estm(:,9), estm(:,10));
 PlotRMSE(TTs, VNEV, estm(:,9), estm(:,10));
-
-%% Console disp
-
-fprintf('%-15s : %6.3f [m]\n', 'Horizontal RMSE', rmse(1));
-fprintf('%-15s : %6.3f [m]\n', 'Vertical RMSE', rmse(2));
-fprintf('%-15s : %6.3f [m]\n\n', '3D RMSE', rmse(3));
-
-fprintf('%-15s : %6.3f [m]\n', 'Max 2D Error', max(horErr));
-fprintf('%-15s : %6.3f [m]\n', 'Max 3D Error', max(dim3Err));
