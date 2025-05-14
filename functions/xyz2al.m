@@ -7,5 +7,5 @@ function al = xyz2al(rec_xyz, sat_xyz)
 
     % Elevation angle (단위: 도)
     el_rad = asin(dot(vec, up) / norm(vec));
-    al = rad2deg(el_rad);
+    al = el_rad;
 end
