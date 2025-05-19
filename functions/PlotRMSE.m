@@ -49,12 +49,13 @@ function PlotRMSE(TTs, NEV, vis_sats, used_sats)
     hold on; grid on; axis equal;
     scatter(east, north, 5, 'r','filled');
     theta = linspace(0,2*pi,200);
-    plot(3*cos(theta),3*sin(theta),'b','LineWidth',1.2);
-    plot(5*cos(theta),5*sin(theta),'b','LineWidth',1.2);
+    round = max(abs(horizontal));
+    plot((round/2)*cos(theta),(round/2)*sin(theta),'b','LineWidth',1.2);
+    plot(round*cos(theta),round*sin(theta),'b','LineWidth',1.2);
     xlabel('East(m)'); ylabel('North(m)');
-    title('Circle Rad : 3m, 5m');
+    title(sprintf('Circle Rad : %.2fm, %.2fm',round/2,round));
     xline(0,'LineWidth',1); yline(0,'LineWidth',1);
-    xlim([-7 7]); ylim([-7 7]);
+    xlim([-(round*1.2) (round*1.2)]); ylim([-(round*1.2) (round*1.2)]);
 
     %% 5. 가운데 상단: Vertical 오차
     axes('Position',[midX, botY+midH+vGap, midW, midH]);
