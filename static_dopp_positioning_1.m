@@ -78,8 +78,9 @@ for kE = 1:NoEpochs
 
             g = -(1/ rho) * (eye(3) - h * h') * vec_rho_v;
             k = -h;
-
+            [~, el] = xyz2azel(vec_rho_p, Truellh(1), Truellh(2));
             NoSatsUsed = NoSatsUsed + 1;
+            matrix_el(NoSatsUsed,:) = rad2deg(el);
             H(NoSatsUsed,:) = [g', k', 1];
             y(NoSatsUsed) = obs_dopp - com;
         end
@@ -87,11 +88,13 @@ for kE = 1:NoEpochs
         if NoSatsUsed < 7
             continue;
         end
-
+        W = zeros(NoSatsUsed,NoSatsUsed);
         H = H(1:NoSatsUsed, :);
         y = y(1:NoSatsUsed, :);
-
-        xhat = pinv(H) * y;
+        W = diag(sind(matrix_el(:,1)));
+        matrix_el = 0;
+        xhat = (H' *W* H) \ (H' *W* y);
+        % xhat = pinv(H) * y;
 
         x = x + xhat;
     
