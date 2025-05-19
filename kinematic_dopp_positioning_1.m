@@ -36,7 +36,7 @@ x = x';
 %% 추정과정 시작
 
 NoEpochs = length(FinalTTs);
-estm = zeros(NoEpochs, 9);
+estm = zeros(NoEpochs, 10);
 nEst = 0;
 
 for kE = 1:NoEpochs
@@ -58,6 +58,9 @@ for kE = 1:NoEpochs
             obs_dopp = QM1e(kS,6) * -L1_lamda;
     
             ieph  = PickEPH_multi(eph,prn,gs);
+            if QM1e(kS,7) > 50
+                continue;
+            end
             
             if eph(ieph, 19) > 0
                 continue;
@@ -81,8 +84,10 @@ for kE = 1:NoEpochs
 
             g = -(1/ rho) * (eye(3) - h * h') * vec_rho_v;
             k = -h;
-
+            llh = xyz2gd(vec_rec_p');
+            [~, el] = xyz2azel(vec_rho_p, llh(1), llh(2));
             NoSatsUsed = NoSatsUsed + 1;
+            matrix_el(NoSatsUsed,:) = rad2deg(el);
             H(NoSatsUsed,:) = [g', k', 1];
             y(NoSatsUsed) = obs_dopp - com;
         end
@@ -90,21 +95,22 @@ for kE = 1:NoEpochs
         if NoSatsUsed < 7
             continue;
         end
-
+        W = zeros(NoSatsUsed,NoSatsUsed);
         H = H(1:NoSatsUsed, :);
         y = y(1:NoSatsUsed, :);
-
-        xhat = pinv(H) * y;
+        W = diag(sind(matrix_el(:,1)));
+        matrix_el = 0;
+        xhat = (H' *W* H) \ (H' *W* y);
+        % xhat = pinv(H) * y;
 
         x = x + xhat;
-    
         if norm(xhat) < EpsStop
             % fprintf("[%d] Err : %3.1fm\n", gs, norm(x(1:3) - TruePos(:)));
 
             nEst = nEst + 1;
             estm(nEst,1)   = gs;
             estm(nEst,2:8) = x;
-            llh(nEst,1:3) = xyz2gd(x(1:3)');
+            % llh(nEst,1:3) = xyz2gd(x(1:3)');
             estm(nEst, 9) = NoSats;
             estm(nEst, 10) = NoSatsUsed;
             break
@@ -129,5 +135,5 @@ VNEV = xyz2topo3(VXYZ, TrueVel);
 close all; clc;
 PlotRMSE(TTs, NEV, estm(:,9), estm(:,10));
 PlotRMSE(TTs, VNEV, estm(:,9), estm(:,10));
-figure;
-geoplot(llh(:,1),llh(:,2));
+% figure;
+% geoplot(llh(:,1),llh(:,2));
