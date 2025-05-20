@@ -79,8 +79,10 @@ for kE = 1:NoEpochs
             g = -(1/ rho) * (eye(3) - h * h') * vec_rho_v;
             k = -h;
             [~, el] = xyz2azel(vec_rho_p, Truellh(1), Truellh(2));
+            [el_xyz, ~] = xyz2elaz(vec_rec_p, vec_sat_p);
             NoSatsUsed = NoSatsUsed + 1;
             matrix_el(NoSatsUsed,:) = rad2deg(el);
+            % matrix_el(NoSatsUsed,2) = rad2deg(el_xyz);
             H(NoSatsUsed,:) = [g', k', 1];
             y(NoSatsUsed) = obs_dopp - com;
         end
