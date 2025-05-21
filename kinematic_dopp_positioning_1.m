@@ -84,10 +84,14 @@ for kE = 1:NoEpochs
 
             g = -(1/ rho) * (eye(3) - h * h') * vec_rho_v;
             k = -h;
+
+            NoSatsUsed = NoSatsUsed + 1;
+            
+            % 고도각 계산 및 저장
             llh = xyz2gd(vec_rec_p');
             [~, el] = xyz2azel(vec_rho_p, llh(1), llh(2));
-            NoSatsUsed = NoSatsUsed + 1;
             matrix_el(NoSatsUsed,:) = rad2deg(el);
+
             H(NoSatsUsed,:) = [g', k', 1];
             y(NoSatsUsed) = obs_dopp - com;
         end
@@ -95,15 +99,33 @@ for kE = 1:NoEpochs
         if NoSatsUsed < 7
             continue;
         end
-        W = zeros(NoSatsUsed,NoSatsUsed);
+
         H = H(1:NoSatsUsed, :);
         y = y(1:NoSatsUsed, :);
-        W = diag(sind(matrix_el(:,1)));
-        matrix_el = 0;
-        xhat = (H' *W* H) \ (H' *W* y);
-        % xhat = pinv(H) * y;
+        
+        % W 계산
+        W = zeros(NoSatsUsed,NoSatsUsed);
+        
+        % 고도각 가중치 
+        W_el = zeros(NoSatsUsed,NoSatsUsed);
+        W_el = diag(sind(matrix_el(:,1)));
+        
+        % SNR 가중치
+        W_snr = zeros(NoSatsUsed,NoSatsUsed);
+        
+        % 가충치 합산
+        W = W_el;
 
+        % 초기화
+        matrix_el = 0;
+
+        % xhat 계산
+        xhat = pinv(H'*W*H)*H'*W*y;
+        % xhat = pinv(H) * y;
+        
+        % 업데이트
         x = x + xhat;
+    
         if norm(xhat) < EpsStop
             % fprintf("[%d] Err : %3.1fm\n", gs, norm(x(1:3) - TruePos(:)));
 

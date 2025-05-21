@@ -78,25 +78,44 @@ for kE = 1:NoEpochs
 
             gt = (vec_rho_v' / rho) * (eye(3) - h * h');
 
-            [~, el] = xyz2azel(vec_rho_p, Truellh(1), Truellh(2));
             NoSatsUsed = NoSatsUsed + 1;
+            
+            % 고도각 계산 및 저장
+            [~, el] = xyz2azel(vec_rho_p, Truellh(1), Truellh(2));
             matrix_el(NoSatsUsed,:) = rad2deg(el);
+            
             H(NoSatsUsed,:) = [gt, 1];
             y(NoSatsUsed) = obs_dopp - com;
         end
-
+        
         if NoSatsUsed < 4
             continue;
         end
-        W = zeros(NoSatsUsed,NoSatsUsed);
+        
         H = H(1:NoSatsUsed, :);
         y = y(1:NoSatsUsed, :);
-        W = diag(sind(matrix_el(:,1)));
+        
+        % W 계산
+        W = zeros(NoSatsUsed,NoSatsUsed);
+        
+        % 고도각 가중치 
+        W_el = zeros(NoSatsUsed,NoSatsUsed);
+        W_el = diag(sind(matrix_el(:,1)));
+        
+        % SNR 가중치
+        W_snr = zeros(NoSatsUsed,NoSatsUsed);
+        
+        % 가충치 합산
+        W = W_el;
+
+        % 초기화
         matrix_el = 0;
-        xhat = (H' *W* H) \ (H' *W* y);
 
+        % xhat 계산
+        xhat = pinv(H'*W*H)*H'*W*y;
         % xhat = pinv(H) * y;
-
+        
+        % 업데이트
         x = x + xhat;
     
         if norm(xhat) < EpsStop
