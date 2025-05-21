@@ -58,9 +58,6 @@ for kE = 1:NoEpochs
             obs_dopp = QM1e(kS,6) * -L1_lamda;
     
             ieph  = PickEPH_multi(eph,prn,gs);
-            if QM1e(kS,7) > 50
-                continue;
-            end
             
             if eph(ieph, 19) > 0
                 continue;
