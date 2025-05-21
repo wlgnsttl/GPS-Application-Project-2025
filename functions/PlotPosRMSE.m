@@ -1,4 +1,4 @@
-function PlotRMSE(TTs, NEV, vis_sats, used_sats)
+function PlotPosRMSE(TTs, NEV, vis_sats, used_sats)
     %   in  :   TTs:    gs time tag
     %           NEV:    dNEV 
     %           visible sat by epoch
@@ -49,13 +49,17 @@ function PlotRMSE(TTs, NEV, vis_sats, used_sats)
     hold on; grid on; axis equal;
     scatter(east, north, 5, 'r','filled');
     theta = linspace(0,2*pi,200);
-    round = max(abs(horizontal));
-    plot((round/2)*cos(theta),(round/2)*sin(theta),'b','LineWidth',1.2);
-    plot(round*cos(theta),round*sin(theta),'b','LineWidth',1.2);
+
+    % round1 = max(abs(horizontal));
+    % round2 = round1/2;
+    round1 = 1000; round2 = 500;
+
+    plot(round2*cos(theta),round2*sin(theta),'b','LineWidth',1.2);
+    plot(round1*cos(theta),round1*sin(theta),'b','LineWidth',1.2);
     xlabel('East(m)'); ylabel('North(m)');
-    title(sprintf('Circle Rad : %.2fm, %.2fm',round/2,round));
+    title(sprintf('Circle Rad : %.2fm, %.2fm',round2,round1));
     xline(0,'LineWidth',1); yline(0,'LineWidth',1);
-    xlim([-(round*1.2) (round*1.2)]); ylim([-(round*1.2) (round*1.2)]);
+    xlim([-(round1*1.2) (round1*1.2)]); ylim([-(round1*1.2) (round1*1.2)]);
 
     %% 5. 가운데 상단: Vertical 오차
     axes('Position',[midX, botY+midH+vGap, midW, midH]);

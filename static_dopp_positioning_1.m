@@ -4,9 +4,9 @@ clc;
 addpath(genpath("data\"));
 addpath(genpath("functions\"));
 
-load('QM_ihvc_25079t.mat');
+load('QM_ihub_25079t.mat');
 load('eph_25079_1.mat');
-load('TruePos_ihvc.mat');
+load('TruePos_ihub.mat');
 
 %% 상수, 변수 정의
 
@@ -84,6 +84,9 @@ for kE = 1:NoEpochs
             [~, el] = xyz2azel(vec_rho_p, Truellh(1), Truellh(2));
             matrix_el(NoSatsUsed,:) = rad2deg(el);
 
+            % snr 저장
+            matrix_snr(NoSatsUsed,:) = QM1e(kS,7);
+
             H(NoSatsUsed,:) = [g', k', 1];
             y(NoSatsUsed) = obs_dopp - com;
         end
@@ -95,21 +98,20 @@ for kE = 1:NoEpochs
         H = H(1:NoSatsUsed, :);
         y = y(1:NoSatsUsed, :);
         
-        % W 계산
-        W = zeros(NoSatsUsed,NoSatsUsed);
-        
         % 고도각 가중치 
-        W_el = zeros(NoSatsUsed,NoSatsUsed);
-        W_el = diag(sind(matrix_el(:,1)));
+        W_el = 1;
+        W_el = WeightEl(matrix_el);
         
         % SNR 가중치
-        W_snr = zeros(NoSatsUsed,NoSatsUsed);
+        W_snr = 1;
+        W_snr = WeightSNR(matrix_snr);
         
         % 가충치 합산
-        W = W_el;
+        W = W_el .* W_snr;
 
         % 초기화
         matrix_el = 0;
+        matrix_snr = 0;
 
         % xhat 계산
         xhat = pinv(H'*W*H)*H'*W*y;
@@ -134,6 +136,7 @@ end
         
 %% RMSE Calc
 
+estm = estm(1:nEst, :);
 TTs = estm(:, 1);
 XYZ = estm(:, 2:4);
 VXYZ = estm(:, 5:7);
@@ -146,8 +149,8 @@ VNEV = xyz2topo2(VXYZ, [0 0 0]);
 %% Figure
 
 close all; clc;
-PlotRMSE(TTs, NEV, estm(:,9), estm(:,10));
-PlotRMSE(TTs, VNEV, estm(:,9), estm(:,10));
+PlotPosRMSE(TTs, NEV, estm(:,9), estm(:,10));
+PlotVelRMSE(TTs, VNEV, estm(:,9), estm(:,10));
 
 %% Console disp
 
