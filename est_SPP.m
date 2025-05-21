@@ -134,7 +134,7 @@ NEV = xyz2topo2(XYZ, TruePos);
 %% Figure
 
 close all; clc;
-PlotRMSE(TTs, NEV, estm(:,6), estm(:,7));
+PlotPosRMSE(TTs, NEV, estm(:,6), estm(:,7));
 
 %% Console disp
 fprintf('%-15s : %6.3f [m]\n', 'Horizontal RMSE', rmse(1));
