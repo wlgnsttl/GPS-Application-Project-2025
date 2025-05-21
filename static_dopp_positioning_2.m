@@ -70,7 +70,6 @@ for kE = 1:NoEpochs
             vec_rho_p = vec_rec_p - vec_sat_p;
             rho = norm(vec_rho_p);
             h = vec_rho_p./rho;
- 
         
             vec_rho_v = vec_rec_v - vec_sat_v;
             dr = h' * vec_rho_v;
@@ -81,8 +80,11 @@ for kE = 1:NoEpochs
             NoSatsUsed = NoSatsUsed + 1;
             
             % 고도각 계산 및 저장
-            [~, el] = xyz2azel(vec_rho_p, Truellh(1), Truellh(2));
+            [~, el] = xyz2azel(-vec_rho_p, Truellh(1), Truellh(2));
             matrix_el(NoSatsUsed,:) = rad2deg(el);
+
+            % snr 저장
+            matrix_snr(NoSatsUsed,:) = QM1e(kS,7);
             
             H(NoSatsUsed,:) = [gt, 1];
             y(NoSatsUsed) = obs_dopp - com;
@@ -95,21 +97,20 @@ for kE = 1:NoEpochs
         H = H(1:NoSatsUsed, :);
         y = y(1:NoSatsUsed, :);
         
-        % W 계산
-        W = zeros(NoSatsUsed,NoSatsUsed);
-        
         % 고도각 가중치 
-        W_el = zeros(NoSatsUsed,NoSatsUsed);
-        W_el = diag(sind(matrix_el(:,1)));
+        W_el = 1;
+        W_el = WeightEl(matrix_el);
         
         % SNR 가중치
-        W_snr = zeros(NoSatsUsed,NoSatsUsed);
+        W_snr = 1;
+        W_snr = WeightSNR(matrix_snr);
         
         % 가충치 합산
-        W = W_el;
+        W = W_el .* W_snr;
 
         % 초기화
         matrix_el = 0;
+        matrix_snr = 0;
 
         % xhat 계산
         xhat = pinv(H'*W*H)*H'*W*y;
@@ -133,6 +134,7 @@ end
         
 %% RMSE Calc
 
+estm = estm(1:nEst, :);
 TTs = estm(:, 1);
 XYZ = estm(:, 2:4);
 NEV = xyz2topo2(XYZ, TruePos);
@@ -142,7 +144,7 @@ NEV = xyz2topo2(XYZ, TruePos);
 %% Figure
 
 close all; clc;
-PlotRMSE(TTs, NEV, estm(:,6), estm(:,7));
+PlotPosRMSE(TTs, NEV, estm(:,6), estm(:,7));
 
 %% Console disp
 

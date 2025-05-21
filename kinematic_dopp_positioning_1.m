@@ -4,9 +4,9 @@ clc;
 addpath(genpath("data\"));
 addpath(genpath("functions\"));
 
-load('QM_RTAP1_250425_0659.mat');
+load('QM_RTAP4_250425_0734.mat');
 load('eph_25115_1.mat');
-load('TruePos_RTAP1_250425_0659.mat');
+load('TruePos_RTAP4_250425_0734.mat');
 
 TruePos = TruePos(:,2:4);
 TrueVel = [0 0 0; diff(TruePos)];
@@ -92,6 +92,9 @@ for kE = 1:NoEpochs
             [~, el] = xyz2azel(vec_rho_p, llh(1), llh(2));
             matrix_el(NoSatsUsed,:) = rad2deg(el);
 
+            % snr 저장
+            matrix_snr(NoSatsUsed,:) = QM1e(kS,7);
+
             H(NoSatsUsed,:) = [g', k', 1];
             y(NoSatsUsed) = obs_dopp - com;
         end
@@ -103,21 +106,20 @@ for kE = 1:NoEpochs
         H = H(1:NoSatsUsed, :);
         y = y(1:NoSatsUsed, :);
         
-        % W 계산
-        W = zeros(NoSatsUsed,NoSatsUsed);
-        
         % 고도각 가중치 
-        W_el = zeros(NoSatsUsed,NoSatsUsed);
-        W_el = diag(sind(matrix_el(:,1)));
+        W_el = 1;
+        W_el = WeightEl(matrix_el);
         
         % SNR 가중치
-        W_snr = zeros(NoSatsUsed,NoSatsUsed);
+        W_snr = 1;
+        W_snr = WeightSNR(matrix_snr);
         
         % 가충치 합산
-        W = W_el;
+        W = W_el .* W_snr;
 
         % 초기화
         matrix_el = 0;
+        matrix_snr = 0;
 
         % xhat 계산
         xhat = pinv(H'*W*H)*H'*W*y;
@@ -130,11 +132,11 @@ for kE = 1:NoEpochs
             % fprintf("[%d] Err : %3.1fm\n", gs, norm(x(1:3) - TruePos(:)));
 
             nEst = nEst + 1;
-            estm(nEst,1)   = gs;
-            estm(nEst,2:8) = x;
+            estm(kE,1)   = gs;
+            estm(kE,2:8) = x;
             % llh(nEst,1:3) = xyz2gd(x(1:3)');
-            estm(nEst, 9) = NoSats;
-            estm(nEst, 10) = NoSatsUsed;
+            estm(kE, 9) = NoSats;
+            estm(kE, 10) = NoSatsUsed;
             break
         end
     end
@@ -142,6 +144,9 @@ end
 
         
 %% RMSE Calc
+
+idx = estm(:, 1) ~= 0;
+estm = estm(idx, :); TruePos = TruePos(idx, :); TrueVel = TrueVel(idx, :);
 
 TTs = estm(:, 1);
 XYZ = estm(:, 2:4);
@@ -155,7 +160,8 @@ VNEV = xyz2topo3(VXYZ, TrueVel);
 %% Figure
 
 close all; clc;
-PlotRMSE(TTs, NEV, estm(:,9), estm(:,10));
-PlotRMSE(TTs, VNEV, estm(:,9), estm(:,10));
+PlotPosRMSE(TTs, NEV, estm(:,9), estm(:,10));
+PlotVelRMSE(TTs, VNEV, estm(:,9), estm(:,10));
+
 % figure;
 % geoplot(llh(:,1),llh(:,2));
