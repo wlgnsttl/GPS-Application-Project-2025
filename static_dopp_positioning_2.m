@@ -1,8 +1,9 @@
+
 clear; close all;
 clc;
 
-addpath(genpath("data\"));
-addpath(genpath("functions\"));
+addpath(genpath("data/"));
+addpath(genpath("functions/"));
 
 load('QM_ihub_25079t.mat');
 load('eph_25079_1.mat');
@@ -35,7 +36,7 @@ x = x';
 NoEpochs = length(FinalTTs);
 estm = zeros(NoEpochs, 7);
 nEst = 0;
-
+MaxSnr = max(QM(:,7));
 for kE = 1:NoEpochs
     idx   = QM(:,1)==FinalTTs(kE);
     QM1e  = QM(idx ,:);
@@ -53,6 +54,11 @@ for kE = 1:NoEpochs
         for kS = 1:NoSats
             prn = QM1e(kS,2);
             obs_dopp = QM1e(kS,6) * -L1_lamda;
+            obs = QM1e(kS,4);
+            
+            STT = obs/CCC;
+            
+            tc = gs - STT;
     
             ieph  = PickEPH_multi(eph,prn,gs);
             
@@ -62,10 +68,13 @@ for kE = 1:NoEpochs
 
             b = eph(ieph, 4); % 위성 시계오차 변화율
             
-            [vec_sat_p, ~] = getSatPos_lab(eph, ieph, gs);
-            vec_sat_p = vec_sat_p';
+            % [vec_sat_p, ~] = getSatPos_lab(eph, ieph, gs);
+            % vec_sat_p = vec_sat_p';
+            % 
+            % vec_sat_v = getSatVel(eph, ieph, gs)'; % Get Sat Velocity
 
-            vec_sat_v = getSatVel(eph, ieph, gs)'; % Get Sat Velocity
+            % 미분정의기반 속도추정
+            [vec_sat_p, vec_sat_v] = getSatVel_diff(eph, ieph, tc, STT);
     
             vec_rho_p = vec_rec_p - vec_sat_p;
             rho = norm(vec_rho_p);
@@ -103,7 +112,7 @@ for kE = 1:NoEpochs
         
         % SNR 가중치
         W_snr = 1;
-        W_snr = WeightSNR(matrix_snr);
+        W_snr = WeightSNR(matrix_snr,MaxSnr);
         
         % 가충치 합산
         W = W_el .* W_snr;

@@ -4,9 +4,11 @@ clc;
 addpath(genpath("data\"));
 addpath(genpath("functions\"));
 
-load('QM_RTAP4_250425_0734.mat');
+load('QM_RTAP1_250425_0659.mat');
 load('eph_25115_1.mat');
-load('TruePos_RTAP4_250425_0734.mat');
+load('TruePos_RTAP1_250425_0659.mat');
+
+sp3 = ReadSP3('IGS0OPSULT_20251131800_02D_15M_ORB.SP3');
 
 TruePos = TruePos(:,2:4);
 TrueVel = [0 0 0; diff(TruePos)];
@@ -38,7 +40,7 @@ x = x';
 NoEpochs = length(FinalTTs);
 estm = zeros(NoEpochs, 10);
 nEst = 0;
-
+MaxSnr = max(QM(:,7));
 for kE = 1:NoEpochs
     idx   = QM(:,1)==FinalTTs(kE);
     QM1e  = QM(idx ,:);
@@ -56,6 +58,11 @@ for kE = 1:NoEpochs
         for kS = 1:NoSats
             prn = QM1e(kS,2);
             obs_dopp = QM1e(kS,6) * -L1_lamda;
+            obs = QM1e(kS,4);
+            
+            STT = obs/CCC;
+            
+            tc = gs - STT;
     
             ieph  = PickEPH_multi(eph,prn,gs);
             
@@ -65,11 +72,15 @@ for kE = 1:NoEpochs
 
             b = eph(ieph, 4);
             
-            [vec_sat_p, ~] = getSatPos_lab(eph, ieph, gs);
-            vec_sat_p = vec_sat_p';
+            % brdc기반 속도추정
+            % [vec_sat_p, ~] = getSatPos_lab(eph, ieph, gs);
+            % vec_sat_p = vec_sat_p';
+            % 
+            % vec_sat_v = getSatVel(eph, ieph, gs)';
+            
+            % 미분정의기반 속도추정
+            [vec_sat_p, vec_sat_v] = getSatVel_diff(eph, ieph, tc, STT);
 
-            vec_sat_v = getSatVel(eph, ieph, gs)';
-    
             vec_rho_p = vec_sat_p - vec_rec_p;
             rho = norm(vec_rho_p);
             h = vec_rho_p./rho;
@@ -92,6 +103,7 @@ for kE = 1:NoEpochs
             % snr 저장
             matrix_snr(NoSatsUsed,:) = QM1e(kS,7);
 
+
             H(NoSatsUsed,:) = [g', k', 1];
             y(NoSatsUsed) = obs_dopp - com;
         end
@@ -109,7 +121,7 @@ for kE = 1:NoEpochs
         
         % SNR 가중치
         W_snr = 1;
-        W_snr = WeightSNR(matrix_snr);
+        W_snr = WeightSNR(matrix_snr, MaxSnr);
         
         % 가충치 합산
         W = W_el .* W_snr;
@@ -162,3 +174,11 @@ PlotVelRMSE(TTs, VNEV, estm(:,9), estm(:,10));
 
 % figure;
 % geoplot(llh(:,1),llh(:,2));
+%% Console disp
+
+fprintf('%-15s : %6.3f [m]\n', 'Horizontal RMSE', rmse(1));
+fprintf('%-15s : %6.3f [m]\n', 'Vertical RMSE', rmse(2));
+fprintf('%-15s : %6.3f [m]\n\n', '3D RMSE', rmse(3));
+
+fprintf('%-15s : %6.3f [m]\n', 'Max 2D Error', max(horErr));
+fprintf('%-15s : %6.3f [m]\n', 'Max 3D Error', max(dim3Err));
