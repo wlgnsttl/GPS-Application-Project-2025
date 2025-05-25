@@ -1,12 +1,16 @@
 clear; close all;
 clc;
 
-addpath(genpath("data\"));
-addpath(genpath("functions\"));
+addpath(genpath("data/"));
+addpath(genpath("functions/"));
 
 load('QM_RTAP5_250425_0748.mat');
 load('eph_25115_1.mat');
-load('TruePos_ihvc.mat');
+% load('TruePos_ihvc.mat');
+load('TruePos_RTAP5_250425_0748.mat');
+
+TruePos = TruePos(:,2:4);
+TrueVel = [0 0 0; diff(TruePos)];
 
 [Lat,Lon,TEC] = ReadGIM('JPL0OPSFIN_20251150000_01D_02H_GIM.INX');
 
@@ -35,7 +39,7 @@ FinalTTs = unique(QM(:,1));
 
 MaxIter = 5;
 EpsStop = 1e-6; 
-x = [TruePos, 1]; 
+x = [TruePos(1,1:3), 1]; 
 x = x';
 
 %% 추정과정 시작
@@ -128,6 +132,7 @@ end
 TTs = estm(:, 1);
 XYZ = estm(:, 2:4);
 NEV = xyz2topo2(XYZ, TruePos);
+llh = xyz2gd(XYZ);
 
 [rmse, horErr, ~, dim3Err] = nev2rmse(NEV);
 
@@ -135,7 +140,8 @@ NEV = xyz2topo2(XYZ, TruePos);
 
 close all; clc;
 PlotPosRMSE(TTs, NEV, estm(:,6), estm(:,7));
-
+figure;
+geoplot(llh(:,1),llh(:,2))
 %% Console disp
 fprintf('%-15s : %6.3f [m]\n', 'Horizontal RMSE', rmse(1));
 fprintf('%-15s : %6.3f [m]\n', 'Vertical RMSE', rmse(2));

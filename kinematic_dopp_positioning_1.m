@@ -4,9 +4,9 @@ clc;
 addpath(genpath("data/"));
 addpath(genpath("functions/"));
 
-load('QM_RTAP1_250425_0659.mat');
+load('QM_RTAP5_250425_0748.mat');
 load('eph_25115_1.mat');
-load('TruePos_RTAP1_250425_0659.mat');
+load('TruePos_RTAP5_250425_0748.mat');
 
 sp3 = ReadSP3('IGS0OPSULT_20251131800_02D_15M_ORB.SP3');
 
@@ -159,11 +159,11 @@ estm_v(:,1) = estm(:,1);
 
 idx = estm(:, 1) ~= 0;
 idx_v = estm_v(:, 1) ~= 0;
-estm = estm(idx, :); TruePos = TruePos(idx, :); TrueVel = TrueVel(idx, :);
+estm = estm(idx, :); TruePos_s = TruePos(idx, :); TrueVel = TrueVel(idx, :);
 estm_v = estm_v(idx_v,:); TruePos_v = TruePos(idx_v, : );
 
 estm_v(1,2:4) = TruePos_v(1,1:3);
-for i = 1 : 412
+for i = 1 : length(estm(:,1))-1
     estm_v(i+1,1) = estm(i+1,1);
     estm_v(i+1,2:4) = estm_v(i,2:4) + estm(i,5:7);
 end
@@ -176,7 +176,7 @@ VXYZ = estm(:, 5:7);
 TTs_v = estm_v(:, 1);
 XYZ_v = estm_v(:, 2:4);
 
-NEV = xyz2topo3(XYZ, TruePos);
+NEV = xyz2topo3(XYZ, TruePos_s);
 VNEV = xyz2topo3(VXYZ, TrueVel);
 
 NEV_v = xyz2topo3(XYZ_v, TruePos_v);
@@ -191,7 +191,7 @@ PlotPosRMSE(TTs, NEV, estm(:,9), estm(:,10));
 PlotVelRMSE(TTs, VNEV, estm(:,9), estm(:,10));
 PlotPosRMSE(TTs, NEV_v, estm(:,9), estm(:,10));
 
-llh_t = xyz2gd(TruePos);
+llh_t = xyz2gd(TruePos_s);
 figure;
 geoplot(llh_v(:,1),llh_v(:,2),'b');
 figure;
