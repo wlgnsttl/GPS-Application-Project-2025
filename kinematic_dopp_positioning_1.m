@@ -1,8 +1,8 @@
 clear; close all;
 clc;
 
-addpath(genpath("data\"));
-addpath(genpath("functions\"));
+addpath(genpath("data/"));
+addpath(genpath("functions/"));
 
 load('QM_RTAP1_250425_0659.mat');
 load('eph_25115_1.mat');
@@ -143,37 +143,59 @@ for kE = 1:NoEpochs
             nEst = nEst + 1;
             estm(kE,1)   = gs;
             estm(kE,2:8) = x;
-            % llh(nEst,1:3) = xyz2gd(x(1:3)');
+            llh_f(nEst,1:3) = xyz2gd(x(1:3)');
             estm(kE, 9) = NoSats;
             estm(kE, 10) = NoSatsUsed;
             break
         end
     end
 end
-
+%% velocity calc
+estm_v = zeros(NoEpochs,4);
+estm_v(1,1:4) = estm(1,1:4);
+estm_v(:,1) = estm(:,1);
         
 %% RMSE Calc
 
 idx = estm(:, 1) ~= 0;
+idx_v = estm_v(:, 1) ~= 0;
 estm = estm(idx, :); TruePos = TruePos(idx, :); TrueVel = TrueVel(idx, :);
+estm_v = estm_v(idx_v,:); TruePos_v = TruePos(idx_v, : );
+
+estm_v(1,2:4) = TruePos_v(1,1:3);
+for i = 1 : 412
+    estm_v(i+1,1) = estm(i+1,1);
+    estm_v(i+1,2:4) = estm_v(i,2:4) + estm(i,5:7);
+end
+llh_v = xyz2gd(estm_v(:,2:4));
 
 TTs = estm(:, 1);
 XYZ = estm(:, 2:4);
 VXYZ = estm(:, 5:7);
 
+TTs_v = estm_v(:, 1);
+XYZ_v = estm_v(:, 2:4);
+
 NEV = xyz2topo3(XYZ, TruePos);
 VNEV = xyz2topo3(VXYZ, TrueVel);
 
+NEV_v = xyz2topo3(XYZ_v, TruePos_v);
+
 [rmse, horErr, verErr, dim3Err] = nev2rmse(NEV);
 
+[rmse_v, horErr_v, verErr_v, dim3Err_v] = nev2rmse(NEV);
 %% Figure
 
 close all; clc;
 PlotPosRMSE(TTs, NEV, estm(:,9), estm(:,10));
 PlotVelRMSE(TTs, VNEV, estm(:,9), estm(:,10));
+PlotPosRMSE(TTs, NEV_v, estm(:,9), estm(:,10));
 
-% figure;
-% geoplot(llh(:,1),llh(:,2));
+llh_t = xyz2gd(TruePos);
+figure;
+geoplot(llh_v(:,1),llh_v(:,2),'b');
+figure;
+geoplot(llh_t(:,1),llh_t(:,2),'r');
 %% Console disp
 
 fprintf('%-15s : %6.3f [m]\n', 'Horizontal RMSE', rmse(1));
