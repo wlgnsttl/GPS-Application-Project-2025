@@ -8,8 +8,6 @@ load('QM_RTAP5_250425_0748.mat');
 load('eph_25115_1.mat');
 load('TruePos_RTAP5_250425_0748.mat');
 
-estm_spp = load('estm.mat');
-estm_spp = estm_spp.estm;
 
 TruePos = TruePos(:,2:4);
 TrueVel = [0 0 0; diff(TruePos)];
