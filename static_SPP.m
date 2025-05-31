@@ -136,7 +136,7 @@ llh = xyz2gd(XYZ);
 %% Figure
 
 close all; clc;
-PlotPosRMSE(TTs, NEV, estm(:,6), estm(:,7));
+PlotPosRMSE(TTs, NEV, estm(:,6), estm(:,7), [3 5]);
 figure;
 geoplot(llh(:,1),llh(:,2))
 %% Console disp

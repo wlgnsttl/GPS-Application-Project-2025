@@ -1,4 +1,4 @@
-function PlotPosRMSE(TTs, NEV, vis_sats, used_sats)
+function PlotPosRMSE(TTs, NEV, vis_sats, used_sats, range)
     %   in  :   TTs:    gs time tag
     %           NEV:    dNEV 
     %           visible sat by epoch
@@ -52,7 +52,7 @@ function PlotPosRMSE(TTs, NEV, vis_sats, used_sats)
 
     % round1 = max(abs(horizontal));
     % round2 = round1/2;
-    round1 = 1000; round2 = 500;
+    round1 = range(2); round2 = range(1);
 
     plot(round2*cos(theta),round2*sin(theta),'b','LineWidth',1.2);
     plot(round1*cos(theta),round1*sin(theta),'b','LineWidth',1.2);

@@ -5,8 +5,8 @@ addpath(genpath("data/"));
 addpath(genpath("functions/"));
 
 % 데이터 로드
-load('TruePos_ihub.mat');
-load('QM_ihub_25079t.mat');
+load('TruePos_ihvc.mat');
+load('QM_ihvc_25079t.mat');
 load('eph_25079_1.mat');
 
 %% 상수, 변수 정의
@@ -153,5 +153,5 @@ VNEV = xyz2topo2(VXYZ, [0 0 0]);
 %% Figure
 
 close all; clc;
-PlotPosRMSE(TTs, NEV, estm(:,9), estm(:,10));
-PlotVelRMSE(TTs, VNEV, estm(:,9), estm(:,10));
+PlotPosRMSE(TTs, NEV, estm(:,9), estm(:,10), [500, 1000]);
+PlotVelRMSE(TTs, VNEV, estm(:,9), estm(:,10), [0.5 1]);

@@ -4,9 +4,9 @@ clc;
 addpath(genpath("data/"));
 addpath(genpath("functions/"));
 
+load('TruePos_ihvc.mat');
 load('QM_ihvc_25079t.mat');
 load('eph_25079_1.mat');
-load('TruePos_ihvc.mat');
 
 %% 상수, 변수 정의
 
@@ -150,7 +150,7 @@ NEV = xyz2topo2(XYZ, TruePos);
 %% Figure
 
 close all; clc;
-PlotPosRMSE(TTs, NEV, estm(:,6), estm(:,7));
+PlotPosRMSE(TTs, NEV, estm(:,6), estm(:,7), [500 1000]);
 
 %% Console disp
 
