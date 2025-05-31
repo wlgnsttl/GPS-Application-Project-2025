@@ -4,11 +4,14 @@ clc;
 addpath(genpath("data/"));
 addpath(genpath("functions/"));
 
-load('QM_RTAP5_250425_0748.mat');
-load('eph_25115_1.mat');
+% load('QM_RTAP5_250425_0748.mat');
+% load('eph_25115_1.mat');
+% load('TruePos_ihvc.mat');
 load('TruePos_ihvc.mat');
+load('QM_ihvc_25079t.mat');
+load('eph_25079_1.mat');
 
-[Lat,Lon,TEC] = ReadGIM('JPL0OPSFIN_20251150000_01D_02H_GIM.INX');
+[Lat,Lon,TEC] = ReadGIM('JPL0OPSFIN_20250790000_01D_02H_GIM.INX');
 
 %% Date 정의
 
