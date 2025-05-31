@@ -4,9 +4,6 @@ clc;
 addpath(genpath("data/"));
 addpath(genpath("functions/"));
 
-% load('QM_RTAP5_250425_0748.mat');
-% load('eph_25115_1.mat');
-% load('TruePos_ihvc.mat');
 load('TruePos_ihvc.mat');
 load('QM_ihvc_25079t.mat');
 load('eph_25079_1.mat');

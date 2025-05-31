@@ -4,10 +4,6 @@ clc;
 addpath(genpath("data/"));
 addpath(genpath("functions/"));
 
-% load('QM_ihub_25079t.mat');
-% load('eph_25079_1.mat');
-% load('TruePos_ihub.mat');
-
 load('QM_ihvc_25079t.mat');
 load('eph_25079_1.mat');
 load('TruePos_ihvc.mat');
@@ -71,11 +67,6 @@ for kE = 1:NoEpochs
             end  
 
             b = eph(ieph, 4); % 위성 시계오차 변화율
-            
-            % [vec_sat_p, ~] = getSatPos_lab(eph, ieph, gs);
-            % vec_sat_p = vec_sat_p';
-            % 
-            % vec_sat_v = getSatVel(eph, ieph, gs)'; % Get Sat Velocity
 
             % 미분정의기반 속도추정
             [vec_sat_p, vec_sat_v] = getSatVel_diff(eph, ieph, tc, STT);
@@ -125,8 +116,10 @@ for kE = 1:NoEpochs
         matrix_el = 0;
         matrix_snr = 0;
 
-        % xhat 계산
+        % 가중치 반영
         xhat = pinv(H'*W*H)*H'*W*y;
+
+        % 가중치 미반영
         % xhat = pinv(H) * y;
         
         % 업데이트

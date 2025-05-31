@@ -4,16 +4,11 @@ clc;
 addpath(genpath("data/"));
 addpath(genpath("functions/"));
 
-% load('QM_ihub_25079t.mat');
-% load('eph_25079_1.mat');
-% load('TruePos_ihub.mat');
+% 데이터 로드
+load('TruePos_ihub.mat');
+load('QM_ihub_25079t.mat');
+load('eph_25079_1.mat');
 
-% load('QM_ihvc_25079t.mat');
-% load('eph_25079_1.mat');
-load('TruePos_ihvc.mat');
-
-load('QM_0529.mat');
-eph = ReadEPH_multi('0529_1628250529_0728.nav');
 %% 상수, 변수 정의
 
 CCC = 299792458;
@@ -144,39 +139,19 @@ end
 %% RMSE Calc
 
 estm = estm(1:nEst, :);
-estm_v = zeros(length(estm(:,1)),4);
-estm_v(1,1:4) = estm(1,1:4);
-estm_v(1,2:4) = TruePos(1,1:3);
-for i = 1 : length(estm(:,1))-1
-    estm_v(i+1,1) = estm(i+1,1);
-    estm_v(i+1,2:4) = estm_v(i,2:4) + estm(i,5:7);
-end
 
 TTs = estm(:, 1);
 XYZ = estm(:, 2:4);
 VXYZ = estm(:, 5:7);
-XYZ_v = estm_v(:, 2:4);
 
 NEV = xyz2topo2(XYZ, TruePos);
-NEV_v = xyz2topo2(XYZ_v, TruePos);
 
 VNEV = xyz2topo2(VXYZ, [0 0 0]);
 
 [rmse, horErr, verErr, dim3Err] = nev2rmse(NEV);
-[rmse_v, horErr_v, verErr_v, dim3Err_v] = nev2rmse(NEV_v);
 
 %% Figure
 
 close all; clc;
 PlotPosRMSE(TTs, NEV, estm(:,9), estm(:,10));
 PlotVelRMSE(TTs, VNEV, estm(:,9), estm(:,10));
-PlotPosRMSE(TTs, NEV_v, estm(:,9), estm(:,10));
-
-%% Console disp
-
-fprintf('%-15s : %6.3f [m]\n', 'Horizontal RMSE', rmse(1));
-fprintf('%-15s : %6.3f [m]\n', 'Vertical RMSE', rmse(2));
-fprintf('%-15s : %6.3f [m]\n\n', '3D RMSE', rmse(3));
-
-fprintf('%-15s : %6.3f [m]\n', 'Max 2D Error', max(horErr));
-fprintf('%-15s : %6.3f [m]\n', 'Max 3D Error', max(dim3Err));

@@ -28,4 +28,4 @@ az = atan2(rho_e, rho_n);
 az = mod(az, 2*pi);
 
 % 고도각 계산: 수평면에 대한 각도, atan2 사용
-el = atan2(rho_v, sqrt(rho_e^2 + rho_n^2));
+el = abs(atan2(rho_v, sqrt(rho_e^2 + rho_n^2)));
