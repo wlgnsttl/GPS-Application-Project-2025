@@ -6,11 +6,7 @@ addpath(genpath("functions/"));
 
 load('QM_RTAP5_250425_0748.mat');
 load('eph_25115_1.mat');
-% load('TruePos_ihvc.mat');
-load('TruePos_RTAP5_250425_0748.mat');
-
-TruePos = TruePos(:,2:4);
-TrueVel = [0 0 0; diff(TruePos)];
+load('TruePos_ihvc.mat');
 
 [Lat,Lon,TEC] = ReadGIM('JPL0OPSFIN_20251150000_01D_02H_GIM.INX');
 
@@ -47,7 +43,7 @@ x = x';
 NoEpochs = length(FinalTTs);
 estm = zeros(NoEpochs, 7);
 nEst = 0;
-
+MaxSnr = max(QM(:,7));
 for kE = 1:NoEpochs
     indxQM = find(QM(:,1) == FinalTTs(kE));
     QM1e = QM(indxQM, :);
@@ -111,6 +107,7 @@ for kE = 1:NoEpochs
             HTH = HTH + H'*H;
             Hty = Hty + H'*y;
             NoSatsUsed = NoSatsUsed + 1;
+            
         end
 
         xhat = HTH \ Hty;

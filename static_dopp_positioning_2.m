@@ -1,4 +1,3 @@
-
 clear; close all;
 clc;
 
@@ -41,6 +40,7 @@ NoEpochs = length(FinalTTs);
 estm = zeros(NoEpochs, 7);
 nEst = 0;
 MaxSnr = max(QM(:,7));
+
 for kE = 1:NoEpochs
     idx   = QM(:,1)==FinalTTs(kE);
     QM1e  = QM(idx ,:);

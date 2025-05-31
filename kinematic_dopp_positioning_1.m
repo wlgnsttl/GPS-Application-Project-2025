@@ -8,7 +8,8 @@ load('QM_RTAP5_250425_0748.mat');
 load('eph_25115_1.mat');
 load('TruePos_RTAP5_250425_0748.mat');
 
-sp3 = ReadSP3('IGS0OPSULT_20251131800_02D_15M_ORB.SP3');
+estm_spp = load('estm.mat');
+estm_spp = estm_spp.estm;
 
 TruePos = TruePos(:,2:4);
 TrueVel = [0 0 0; diff(TruePos)];
@@ -159,14 +160,17 @@ estm_v(:,1) = estm(:,1);
 
 idx = estm(:, 1) ~= 0;
 idx_v = estm_v(:, 1) ~= 0;
+idx_spp = estm_spp(:, 1) ~= 0;
 estm = estm(idx, :); TruePos_s = TruePos(idx, :); TrueVel = TrueVel(idx, :);
 estm_v = estm_v(idx_v,:); TruePos_v = TruePos(idx_v, : );
+estm_spp = estm_spp(idx_spp, :); TruePos_spp = TruePos(idx_spp, :);
 
+estm_v(1,2:4) = estm(1,2:4);
 estm_v(1,2:4) = TruePos_v(1,1:3);
 for i = 1 : length(estm(:,1))-1
     estm_v(i+1,1) = estm(i+1,1);
     estm_v(i+1,2:4) = estm_v(i,2:4) + estm(i,5:7);
-end
+end 
 llh_v = xyz2gd(estm_v(:,2:4));
 
 TTs = estm(:, 1);
@@ -176,26 +180,37 @@ VXYZ = estm(:, 5:7);
 TTs_v = estm_v(:, 1);
 XYZ_v = estm_v(:, 2:4);
 
+TTs_spp = estm_spp(:,1);
+XYZ_spp = estm_spp(:, 2:4);
+
 NEV = xyz2topo3(XYZ, TruePos_s);
 VNEV = xyz2topo3(VXYZ, TrueVel);
 
 NEV_v = xyz2topo3(XYZ_v, TruePos_v);
 
-[rmse, horErr, verErr, dim3Err] = nev2rmse(NEV);
+NEV_spp = xyz2topo3(XYZ_spp, TruePos_spp);
 
-[rmse_v, horErr_v, verErr_v, dim3Err_v] = nev2rmse(NEV);
+[rmse, horErr, verErr, dim3Err] = nev2rmse(NEV);
+[rmse_v, horErr_v, verErr_v, dim3Err_v] = nev2rmse(NEV_v);
+[rmse_spp, horErr_spp, verErr_spp, dim3Err_spp] = nev2rmse(NEV_spp);
 %% Figure
 
 close all; clc;
 PlotPosRMSE(TTs, NEV, estm(:,9), estm(:,10));
 PlotVelRMSE(TTs, VNEV, estm(:,9), estm(:,10));
 PlotPosRMSE(TTs, NEV_v, estm(:,9), estm(:,10));
+PlotPosRMSE(TTs_spp, NEV_spp,estm_spp(:,6), estm_spp(:,7));
 
 llh_t = xyz2gd(TruePos_s);
+llh_s = xyz2gd(XYZ_spp);
+figure;
+geoplot(llh_f(:,1),llh_f(:,2),'b');
 figure;
 geoplot(llh_v(:,1),llh_v(:,2),'b');
 figure;
 geoplot(llh_t(:,1),llh_t(:,2),'r');
+figure;
+geoplot(llh_s(:,1),llh_s(:,2),'b');
 %% Console disp
 
 fprintf('%-15s : %6.3f [m]\n', 'Horizontal RMSE', rmse(1));
@@ -204,3 +219,19 @@ fprintf('%-15s : %6.3f [m]\n\n', '3D RMSE', rmse(3));
 
 fprintf('%-15s : %6.3f [m]\n', 'Max 2D Error', max(horErr));
 fprintf('%-15s : %6.3f [m]\n', 'Max 3D Error', max(dim3Err));
+
+fprintf('--------------------------------------\n')
+fprintf('%-15s : %6.3f [m]\n', 'Horizontal RMSE', rmse_v(1));
+fprintf('%-15s : %6.3f [m]\n', 'Vertical RMSE', rmse_v(2));
+fprintf('%-15s : %6.3f [m]\n\n', '3D RMSE', rmse_v(3));
+
+fprintf('%-15s : %6.3f [m]\n', 'Max 2D Error', max(horErr_v));
+fprintf('%-15s : %6.3f [m]\n', 'Max 3D Error', max(dim3Err_v));
+
+fprintf('--------------------------------------\n')
+fprintf('%-15s : %6.3f [m]\n', 'Horizontal RMSE', rmse_spp(1));
+fprintf('%-15s : %6.3f [m]\n', 'Vertical RMSE', rmse_spp(2));
+fprintf('%-15s : %6.3f [m]\n\n', '3D RMSE', rmse_spp(3));
+
+fprintf('%-15s : %6.3f [m]\n', 'Max 2D Error', max(horErr_spp));
+fprintf('%-15s : %6.3f [m]\n', 'Max 3D Error', max(dim3Err_spp));
