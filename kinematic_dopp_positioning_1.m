@@ -143,7 +143,7 @@ for kE = 1:NoEpochs
     end
 end
         
-%% RMSE Calc
+%% Comp
 
 idx = estm(:, 1) ~= 0;
 estm = estm(idx, :); TruePos = TruePos(idx, :); TrueVel = TrueVel(idx, :);
