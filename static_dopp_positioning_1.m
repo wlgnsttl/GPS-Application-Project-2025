@@ -1,13 +1,19 @@
 clear; close all;
 clc;
 
-addpath(genpath("data\"));
-addpath(genpath("functions\"));
+addpath(genpath("data/"));
+addpath(genpath("functions/"));
 
-load('QM_ihub_25079t.mat');
-load('eph_25079_1.mat');
-load('TruePos_ihub.mat');
+% load('QM_ihub_25079t.mat');
+% load('eph_25079_1.mat');
+% load('TruePos_ihub.mat');
 
+% load('QM_ihvc_25079t.mat');
+% load('eph_25079_1.mat');
+load('TruePos_ihvc.mat');
+
+load('QM_0529.mat');
+eph = ReadEPH_multi('0529_1628250529_0728.nav');
 %% 상수, 변수 정의
 
 CCC = 299792458;
@@ -35,6 +41,7 @@ x = x';
 NoEpochs = length(FinalTTs);
 estm = zeros(NoEpochs, 9);
 nEst = 0;
+MaxSnr = max(QM(:,7));
 
 for kE = 1:NoEpochs
     idx   = QM(:,1)==FinalTTs(kE);
@@ -104,7 +111,7 @@ for kE = 1:NoEpochs
         
         % SNR 가중치
         W_snr = 1;
-        W_snr = WeightSNR(matrix_snr);
+        W_snr = WeightSNR(matrix_snr,MaxSnr);
         
         % 가충치 합산
         W = W_el .* W_snr;
@@ -137,20 +144,33 @@ end
 %% RMSE Calc
 
 estm = estm(1:nEst, :);
+estm_v = zeros(length(estm(:,1)),4);
+estm_v(1,1:4) = estm(1,1:4);
+estm_v(1,2:4) = TruePos(1,1:3);
+for i = 1 : length(estm(:,1))-1
+    estm_v(i+1,1) = estm(i+1,1);
+    estm_v(i+1,2:4) = estm_v(i,2:4) + estm(i,5:7);
+end
+
 TTs = estm(:, 1);
 XYZ = estm(:, 2:4);
 VXYZ = estm(:, 5:7);
+XYZ_v = estm_v(:, 2:4);
 
 NEV = xyz2topo2(XYZ, TruePos);
+NEV_v = xyz2topo2(XYZ_v, TruePos);
+
 VNEV = xyz2topo2(VXYZ, [0 0 0]);
 
 [rmse, horErr, verErr, dim3Err] = nev2rmse(NEV);
+[rmse_v, horErr_v, verErr_v, dim3Err_v] = nev2rmse(NEV_v);
 
 %% Figure
 
 close all; clc;
 PlotPosRMSE(TTs, NEV, estm(:,9), estm(:,10));
 PlotVelRMSE(TTs, VNEV, estm(:,9), estm(:,10));
+PlotPosRMSE(TTs, NEV_v, estm(:,9), estm(:,10));
 
 %% Console disp
 

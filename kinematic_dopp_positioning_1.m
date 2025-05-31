@@ -1,12 +1,13 @@
 clear; close all;
 clc;
 
-addpath(genpath("data\"));
-addpath(genpath("functions\"));
+addpath(genpath("data/"));
+addpath(genpath("functions/"));
 
 load('QM_RTAP5_250425_0748.mat');
 load('eph_25115_1.mat');
 load('TruePos_RTAP5_250425_0748.mat');
+
 
 TruePos = TruePos(:,2:4);
 TrueVel = [0 0 0; diff(TruePos)];
@@ -38,7 +39,7 @@ x = x';
 NoEpochs = length(FinalTTs);
 estm = zeros(NoEpochs, 10);
 nEst = 0;
-
+MaxSnr = max(QM(:,7));
 for kE = 1:NoEpochs
     idx   = QM(:,1)==FinalTTs(kE);
     QM1e  = QM(idx ,:);
@@ -56,6 +57,11 @@ for kE = 1:NoEpochs
         for kS = 1:NoSats
             prn = QM1e(kS,2);
             obs_dopp = QM1e(kS,6) * -L1_lamda;
+            obs = QM1e(kS,4);
+            
+            STT = obs/CCC;
+            
+            tc = gs - STT;
     
             ieph  = PickEPH_multi(eph,prn,gs);
             
@@ -65,11 +71,15 @@ for kE = 1:NoEpochs
 
             b = eph(ieph, 4);
             
-            [vec_sat_p, ~] = getSatPos_lab(eph, ieph, gs);
-            vec_sat_p = vec_sat_p';
+            % brdc기반 속도추정
+            % [vec_sat_p, ~] = getSatPos_lab(eph, ieph, gs);
+            % vec_sat_p = vec_sat_p';
+            % 
+            % vec_sat_v = getSatVel(eph, ieph, gs)';
+            
+            % 미분정의기반 속도추정
+            [vec_sat_p, vec_sat_v] = getSatVel_diff(eph, ieph, tc, STT);
 
-            vec_sat_v = getSatVel(eph, ieph, gs)';
-    
             vec_rho_p = vec_sat_p - vec_rec_p;
             rho = norm(vec_rho_p);
             h = vec_rho_p./rho;
@@ -92,6 +102,7 @@ for kE = 1:NoEpochs
             % snr 저장
             matrix_snr(NoSatsUsed,:) = QM1e(kS,7);
 
+
             H(NoSatsUsed,:) = [g', k', 1];
             y(NoSatsUsed) = obs_dopp - com;
         end
@@ -109,7 +120,7 @@ for kE = 1:NoEpochs
         
         % SNR 가중치
         W_snr = 1;
-        W_snr = WeightSNR(matrix_snr);
+        W_snr = WeightSNR(matrix_snr, MaxSnr);
         
         % 가충치 합산
         W = W_el .* W_snr;
@@ -131,34 +142,94 @@ for kE = 1:NoEpochs
             nEst = nEst + 1;
             estm(kE,1)   = gs;
             estm(kE,2:8) = x;
-            % llh(nEst,1:3) = xyz2gd(x(1:3)');
+            llh_f(nEst,1:3) = xyz2gd(x(1:3)');
             estm(kE, 9) = NoSats;
             estm(kE, 10) = NoSatsUsed;
             break
         end
     end
 end
-
+%% velocity calc
+estm_v = zeros(NoEpochs,4);
+estm_v(1,1:4) = estm(1,1:4);
+estm_v(:,1) = estm(:,1);
         
 %% RMSE Calc
 
 idx = estm(:, 1) ~= 0;
-estm = estm(idx, :); TruePos = TruePos(idx, :); TrueVel = TrueVel(idx, :);
+idx_v = estm_v(:, 1) ~= 0;
+idx_spp = estm_spp(:, 1) ~= 0;
+estm = estm(idx, :); TruePos_s = TruePos(idx, :); TrueVel = TrueVel(idx, :);
+estm_v = estm_v(idx_v,:); TruePos_v = TruePos(idx_v, : );
+estm_spp = estm_spp(idx_spp, :); TruePos_spp = TruePos(idx_spp, :);
+
+estm_v(1,2:4) = estm(1,2:4);
+estm_v(1,2:4) = TruePos_v(1,1:3);
+for i = 1 : length(estm(:,1))-1
+    estm_v(i+1,1) = estm(i+1,1);
+    estm_v(i+1,2:4) = estm_v(i,2:4) + estm(i,5:7);
+end 
+llh_v = xyz2gd(estm_v(:,2:4));
 
 TTs = estm(:, 1);
 XYZ = estm(:, 2:4);
 VXYZ = estm(:, 5:7);
 
-NEV = xyz2topo3(XYZ, TruePos);
+TTs_v = estm_v(:, 1);
+XYZ_v = estm_v(:, 2:4);
+
+TTs_spp = estm_spp(:,1);
+XYZ_spp = estm_spp(:, 2:4);
+
+NEV = xyz2topo3(XYZ, TruePos_s);
 VNEV = xyz2topo3(VXYZ, TrueVel);
 
-[rmse, horErr, verErr, dim3Err] = nev2rmse(NEV);
+NEV_v = xyz2topo3(XYZ_v, TruePos_v);
 
+NEV_spp = xyz2topo3(XYZ_spp, TruePos_spp);
+
+[rmse, horErr, verErr, dim3Err] = nev2rmse(NEV);
+[rmse_v, horErr_v, verErr_v, dim3Err_v] = nev2rmse(NEV_v);
+[rmse_spp, horErr_spp, verErr_spp, dim3Err_spp] = nev2rmse(NEV_spp);
 %% Figure
 
-close all; clc;
-PlotPosRMSE(TTs, NEV, estm(:,9), estm(:,10));
-PlotVelRMSE(TTs, VNEV, estm(:,9), estm(:,10));
+% close all; clc;
+% PlotPosRMSE(TTs, NEV, estm(:,9), estm(:,10));
+% PlotVelRMSE(TTs, VNEV, estm(:,9), estm(:,10));
+% PlotPosRMSE(TTs, NEV_v, estm(:,9), estm(:,10));
+PlotPosRMSE(TTs_spp, NEV_spp,estm_spp(:,6), estm_spp(:,7));
 
+llh_t = xyz2gd(TruePos_s);
+llh_s = xyz2gd(XYZ_spp);
 % figure;
-% geoplot(llh(:,1),llh(:,2));
+% geoplot(llh_f(:,1),llh_f(:,2),'b');
+% figure;
+% geoplot(llh_v(:,1),llh_v(:,2),'b');
+% figure;
+% geoplot(llh_t(:,1),llh_t(:,2),'r');
+% figure;
+% geoplot(llh_s(:,1),llh_s(:,2),'b');
+%% Console disp
+
+% fprintf('%-15s : %6.3f [m]\n', 'Horizontal RMSE', rmse(1));
+% fprintf('%-15s : %6.3f [m]\n', 'Vertical RMSE', rmse(2));
+% fprintf('%-15s : %6.3f [m]\n\n', '3D RMSE', rmse(3));
+% 
+% fprintf('%-15s : %6.3f [m]\n', 'Max 2D Error', max(horErr));
+% fprintf('%-15s : %6.3f [m]\n', 'Max 3D Error', max(dim3Err));
+% 
+% fprintf('--------------------------------------\n')
+% fprintf('%-15s : %6.3f [m]\n', 'Horizontal RMSE', rmse_v(1));
+% fprintf('%-15s : %6.3f [m]\n', 'Vertical RMSE', rmse_v(2));
+% fprintf('%-15s : %6.3f [m]\n\n', '3D RMSE', rmse_v(3));
+% 
+% fprintf('%-15s : %6.3f [m]\n', 'Max 2D Error', max(horErr_v));
+% fprintf('%-15s : %6.3f [m]\n', 'Max 3D Error', max(dim3Err_v));
+
+fprintf('--------------------------------------\n')
+fprintf('%-15s : %6.3f [m]\n', 'Horizontal RMSE', rmse_spp(1));
+fprintf('%-15s : %6.3f [m]\n', 'Vertical RMSE', rmse_spp(2));
+fprintf('%-15s : %6.3f [m]\n\n', '3D RMSE', rmse_spp(3));
+
+fprintf('%-15s : %6.3f [m]\n', 'Max 2D Error', max(horErr_spp));
+fprintf('%-15s : %6.3f [m]\n', 'Max 3D Error', max(dim3Err_spp));
