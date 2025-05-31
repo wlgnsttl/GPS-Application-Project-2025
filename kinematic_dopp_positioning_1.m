@@ -4,9 +4,9 @@ clc;
 addpath(genpath("data\"));
 addpath(genpath("functions\"));
 
-load('QM_RTAP4_250425_0734.mat');
+load('QM_RTAP5_250425_0748.mat');
 load('eph_25115_1.mat');
-load('TruePos_RTAP4_250425_0734.mat');
+load('TruePos_RTAP5_250425_0748.mat');
 
 TruePos = TruePos(:,2:4);
 TrueVel = [0 0 0; diff(TruePos)];
