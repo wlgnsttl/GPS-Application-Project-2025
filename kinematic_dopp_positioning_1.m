@@ -195,38 +195,38 @@ NEV_spp = xyz2topo3(XYZ_spp, TruePos_spp);
 [rmse_spp, horErr_spp, verErr_spp, dim3Err_spp] = nev2rmse(NEV_spp);
 %% Figure
 
-close all; clc;
-PlotPosRMSE(TTs, NEV, estm(:,9), estm(:,10));
-PlotVelRMSE(TTs, VNEV, estm(:,9), estm(:,10));
-PlotPosRMSE(TTs, NEV_v, estm(:,9), estm(:,10));
+% close all; clc;
+% PlotPosRMSE(TTs, NEV, estm(:,9), estm(:,10));
+% PlotVelRMSE(TTs, VNEV, estm(:,9), estm(:,10));
+% PlotPosRMSE(TTs, NEV_v, estm(:,9), estm(:,10));
 PlotPosRMSE(TTs_spp, NEV_spp,estm_spp(:,6), estm_spp(:,7));
 
 llh_t = xyz2gd(TruePos_s);
 llh_s = xyz2gd(XYZ_spp);
-figure;
-geoplot(llh_f(:,1),llh_f(:,2),'b');
-figure;
-geoplot(llh_v(:,1),llh_v(:,2),'b');
-figure;
-geoplot(llh_t(:,1),llh_t(:,2),'r');
-figure;
-geoplot(llh_s(:,1),llh_s(:,2),'b');
+% figure;
+% geoplot(llh_f(:,1),llh_f(:,2),'b');
+% figure;
+% geoplot(llh_v(:,1),llh_v(:,2),'b');
+% figure;
+% geoplot(llh_t(:,1),llh_t(:,2),'r');
+% figure;
+% geoplot(llh_s(:,1),llh_s(:,2),'b');
 %% Console disp
 
-fprintf('%-15s : %6.3f [m]\n', 'Horizontal RMSE', rmse(1));
-fprintf('%-15s : %6.3f [m]\n', 'Vertical RMSE', rmse(2));
-fprintf('%-15s : %6.3f [m]\n\n', '3D RMSE', rmse(3));
-
-fprintf('%-15s : %6.3f [m]\n', 'Max 2D Error', max(horErr));
-fprintf('%-15s : %6.3f [m]\n', 'Max 3D Error', max(dim3Err));
-
-fprintf('--------------------------------------\n')
-fprintf('%-15s : %6.3f [m]\n', 'Horizontal RMSE', rmse_v(1));
-fprintf('%-15s : %6.3f [m]\n', 'Vertical RMSE', rmse_v(2));
-fprintf('%-15s : %6.3f [m]\n\n', '3D RMSE', rmse_v(3));
-
-fprintf('%-15s : %6.3f [m]\n', 'Max 2D Error', max(horErr_v));
-fprintf('%-15s : %6.3f [m]\n', 'Max 3D Error', max(dim3Err_v));
+% fprintf('%-15s : %6.3f [m]\n', 'Horizontal RMSE', rmse(1));
+% fprintf('%-15s : %6.3f [m]\n', 'Vertical RMSE', rmse(2));
+% fprintf('%-15s : %6.3f [m]\n\n', '3D RMSE', rmse(3));
+% 
+% fprintf('%-15s : %6.3f [m]\n', 'Max 2D Error', max(horErr));
+% fprintf('%-15s : %6.3f [m]\n', 'Max 3D Error', max(dim3Err));
+% 
+% fprintf('--------------------------------------\n')
+% fprintf('%-15s : %6.3f [m]\n', 'Horizontal RMSE', rmse_v(1));
+% fprintf('%-15s : %6.3f [m]\n', 'Vertical RMSE', rmse_v(2));
+% fprintf('%-15s : %6.3f [m]\n\n', '3D RMSE', rmse_v(3));
+% 
+% fprintf('%-15s : %6.3f [m]\n', 'Max 2D Error', max(horErr_v));
+% fprintf('%-15s : %6.3f [m]\n', 'Max 3D Error', max(dim3Err_v));
 
 fprintf('--------------------------------------\n')
 fprintf('%-15s : %6.3f [m]\n', 'Horizontal RMSE', rmse_spp(1));

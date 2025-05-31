@@ -4,18 +4,18 @@ clc;
 addpath(genpath("data/"));
 addpath(genpath("functions/"));
 
-load('TruePos_ihvc.mat');
-load('QM_ihvc_25079t.mat');
-load('eph_25079_1.mat');
+load('QM_RTAP5_250425_0748.mat');
+load('eph_25115_1.mat');
+load('TruePos_RTAP5_250425_0748.mat');
 
-[Lat,Lon,TEC] = ReadGIM('JPL0OPSFIN_20250790000_01D_02H_GIM.INX');
+[Lat,Lon,TEC] = ReadGIM('JPL0OPSFIN_20251150000_01D_02H_GIM.INX');
 
 obsType = 103;
 
 QM = SelectQM(arrQM, 100, obsType);
 FinalTTs = unique(QM(:,1));
 
-
+TruePos = TruePos(:,2:4);
 
 %% 상수
 CCC = 299792458; % 광속 (m/s)
@@ -23,18 +23,18 @@ Truellh = xyz2gd(TruePos);
 %% Date 정의
 
 yyyy = 2025; 
-mm = 3; 
-dd = 20;
+mm = 4; 
+dd = 25;
 
 [gw, ~] = date2gwgs(yyyy, mm, dd, 0, 0, 0);
 jd2mjd = 2400000.5;
 %% 초기 상태 및 공분산
-x_hat = [TruePos'; 0]; % [x; y; z; b] 초기 위치 추정
-P = blkdiag(eye(3),100) ;     % 초기 공분산 행렬
+x_hat = [TruePos(1,1:3)';0; 0; 0; 0]; % [x; y; z; b] 초기 위치 추정
+P = blkdiag(eye(3),eye(3),100) ;     % 초기 공분산 행렬
 % Q = diag([0, 0, 0, 100]);
-Q = blkdiag(eye(3)*1e-6,1e2).*100000;
+Q = blkdiag(eye(3),eye(3),1e2);
 % Q = Q.*Q;
-A = eye(4);
+A = eye(7);
 %% 측정 노이즈
 estm =[];
 for epoch = 1:length(FinalTTs)
@@ -55,7 +55,7 @@ for epoch = 1:length(FinalTTs)
     clear H com R
     obs = [];
     R_el = [];
-    k=1;
+    NosatsUsed=1;
     for i = 1:length(NoSats)
         obs_t = QM_obs(i,4); % pseudorange [m]
         STT = obs_t/CCC;
@@ -90,13 +90,43 @@ for epoch = 1:length(FinalTTs)
         dTrop = gmfh*(0.0022767*pres)/(1-0.00266*cos(2*dlat) - 0.00028*dhgt/1e3);
         % 보정값 합산
         dtSat = a + b*(tc - toe) + c*(tc - toe)^2 - Tgd + dRel;
+
+               
+        obs(NosatsUsed,1) = obs_t;
+        com(NosatsUsed,1) = rho + xp(4) - CCC * dtSat + dIno + dTrop;
+        H(NosatsUsed,:) = [-vec_rho(1)/rho, -vec_rho(2)/rho, -vec_rho(3)/rho,1];
+        R_el(NosatsUsed,1) =(el);
+        NosatsUsed= NosatsUsed+1;
+    end
+    for i = 1 :length(NoSats)
+        obs_t = QM_obs(i,4); % pseudorange [m]
+        STT = obs_t/CCC;
+        prn = NoSats(i);
+        tc = QM_obs(i,1) - STT;
+        ieph  = PickEPH_multi(eph,prn,gs);
+        toe = eph(ieph, 1); a = eph(ieph, 3); b = eph(ieph, 4); c = eph(ieph, 5); Tgd = eph(ieph, 6);
+
+        [vec_sat_p, vec_sat_v] = getSatVel_diff(eph, ieph, tc, STT);
+
+        vec_rho_p = vec_sat_p - xp(1:3,1);
+        rho = norm(vec_rho_p);
+        h = vec_rho_p./rho;
+        [az, el] = xyz2azel(vec_rho_p', Truellh(1),Truellh(2));
+        if rad2deg(el)<7
+            continue
+        end
+        if eph(ieph, 19) > 0
+                continue;
+        end
+
+
+        vec_rho_v = vec_sat_v - xp(4:6,1);
+        dr = h' * vec_rho_v;
+        com = dr - CCC * b + xp(7);
+
+        % g = -(1/ rho) * (eye(3) - h * h') * vec_rho_v;
+        k = -h;
         
-           
-        obs(k,1) = obs_t;
-        com(k,1) = rho + xp(4) - CCC * dtSat + dIno + dTrop;
-        H(k,:) = [-vec_rho(1)/rho, -vec_rho(2)/rho, -vec_rho(3)/rho, 1];
-        R_el(k,1) =(el);
-        k= k+1;
     end
     
     % 칼만 이득
@@ -112,9 +142,12 @@ for epoch = 1:length(FinalTTs)
 
     
     % 결과 저장
-    estm = [estm; gs, x_hat',k-1,length(NoSats)];
+    estm = [estm; gs, x_hat',NosatsUsed-1,length(NoSats)];
 end
 
+%% RMSE Calc
+idx = estm(:, 1) ~= 0;
+estm = estm(idx, :); TruePos = TruePos(idx, :);
 %% Figure
 TTs = estm(:,1);
 NEV = xyz2topo2(estm(:,2:4),TruePos);
