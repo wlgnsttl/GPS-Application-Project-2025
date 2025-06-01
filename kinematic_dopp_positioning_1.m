@@ -161,4 +161,4 @@ VNEV = xyz2topo3(VXYZ, TrueVel);
 
 close all; clc;
 PlotPosRMSE(TTs, NEV, estm(:,9), estm(:,10), [1500 3000]);
-PlotVelRMSE(TTs, VNEV, estm(:,9), estm(:,10), [1 2]);
+PlotVelRMSE(TTs, VNEV, estm(:,9), estm(:,10), [5 10]);

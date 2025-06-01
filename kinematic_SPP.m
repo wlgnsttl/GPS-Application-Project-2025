@@ -8,7 +8,7 @@ load('QM_RTAP5_250425_0748.mat');
 load('eph_25115_1.mat');
 load('TruePos_RTAP5_250425_0748.mat');
 
-[Lat,Lon,TEC] = ReadGIM('JPL0OPSFIN_20250790000_01D_02H_GIM.INX');
+[Lat,Lon,TEC] = ReadGIM('JPL0OPSFIN_20251150000_01D_02H_GIM.INX');
 
 TruePos = TruePos(:,2:4);
 TrueVel = [0 0 0; diff(TruePos)]; % 정지 상태에서 출발 가정
@@ -77,7 +77,7 @@ for kE = 1:NoEpochs
             vec_rho = vec_sat - vec_site;
             rho = norm(vec_rho);
 
-            [az, el] = xyz2azel(vec_rho, Truellh(1), Truellh(2));
+            [az, el] = xyz2azel(vec_rho, Truellh(kE,1), Truellh(kE,2));
 
             % 고도각 7도 이하는 추정 과정에서 제거
             if el*180/pi <= 7
@@ -94,7 +94,7 @@ for kE = 1:NoEpochs
 
             % dTrop = 0;
             dmjd = gwgs2jd(gw, tc) - jd2mjd;
-            dlat = deg2rad(Truellh(1)); dlon = deg2rad(Truellh(2)); dhgt = Truellh(3);
+            dlat = deg2rad(Truellh(kE,1)); dlon = deg2rad(Truellh(kE,2)); dhgt = Truellh(kE,3);
             zd = pi/2 - el;
             [pres , temp, undu] = gpt_v1(dmjd, dlat, dlon, dhgt);
             % fprintf('%d\n', pres);

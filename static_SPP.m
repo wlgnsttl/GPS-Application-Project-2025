@@ -4,17 +4,17 @@ clc;
 addpath(genpath("data/"));
 addpath(genpath("functions/"));
 
-load('TruePos_ihvc.mat');
-load('QM_ihvc_25079t.mat');
-load('eph_25079_1.mat');
+load('QM_ihub_0417.mat');
+load('eph_0419_rapid.mat');
+load('TruePos_ihub.mat');
 
-[Lat,Lon,TEC] = ReadGIM('JPL0OPSFIN_20250790000_01D_02H_GIM.INX');
+[Lat,Lon,TEC] = ReadGIM('JPL0OPSFIN_20251070000_01D_02H_GIM.INX');
 
 %% Date 정의
 
 yyyy = 2025; 
-mm = 3; 
-dd = 20;
+mm = 4; 
+dd = 17;
 
 [gw, ~] = date2gwgs(yyyy, mm, dd, 0, 0, 0);
 jd2mjd = 2400000.5;
