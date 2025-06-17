@@ -4,11 +4,11 @@ clc;
 addpath(genpath("data/"));
 addpath(genpath("functions/"));
 
-load('QM_ihub_0417.mat');
-load('eph_0419_rapid.mat');
-load('TruePos_ihub.mat');
+load('QM_GAMGKOR');
+load('eph_24');
+load('TruePos_GAMGKOR');
 
-[Lat,Lon,TEC] = ReadGIM('JPL0OPSFIN_20251070000_01D_02H_GIM.INX');
+[Lat,Lon,TEC] = ReadGIM('JPL0OPSFIN_20240010000_01D_02H_GIM.INX');
 
 %% Date 정의
 
@@ -64,6 +64,11 @@ for kE = 1:NoEpochs
             STT = obs/CCC;
             tc = gs - STT;
             ieph = PickEPH_multi(eph, prn, tc);
+
+            if ieph == 0
+                continue;
+            end
+
             toe = eph(ieph, 1); a = eph(ieph, 3); b = eph(ieph, 4); c = eph(ieph, 5); Tgd = eph(ieph, 6);
             
             [vec_sat, dRel] = getSatPos_lab(eph, ieph, tc);
@@ -81,6 +86,7 @@ for kE = 1:NoEpochs
                 continue;
             end
             
+
             % SV health이 0이 아니면 추정 과정에서 제거
             if eph(ieph, 19) > 0
                 continue;

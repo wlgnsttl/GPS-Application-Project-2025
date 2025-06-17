@@ -19,10 +19,16 @@ function [nmea_data] = ReadNMEA(filename, option)
                 epoch_count = epoch_count +1;
                 GGA_data = readGGA(line);
                 nmea_data(epoch_count, :) = GGA_data;
+                
             elseif contains(line, 'GSA') && strcmp(option, 'GSA') %GGA 데이터만 추출
                 epoch_count = epoch_count +1;
                 GSA_data = readGSA(line);
                 nmea_data(epoch_count, :) = GSA_data;
+      
+            elseif contains(line, 'VTG') && strcmp(option, 'VTG') %VTG 데이터만 추출
+                epoch_count = epoch_count +1;
+                VTG_data = readVTG(line);
+                nmea_data(epoch_count, :) = VTG_data;
             end
         end
     end
@@ -72,7 +78,16 @@ end
 age_of_diff = str2double(GGA_line{14});
 diff_station_id = str2double(extractBefore(GGA_line{15}, '*'));
 
-GGA_data = [UTC, latitude, longitude, gps_quality_indicator, nums_of_sat, HDOP, altitude, geoidal_separation, age_of_diff, diff_station_id];
+GGA_data = [UTC, ...
+            latitude, ...
+            longitude, ...
+            gps_quality_indicator, ...
+            nums_of_sat, ...
+            HDOP, ...
+            altitude, ...
+            geoidal_separation, ...
+            age_of_diff, ...
+            diff_station_id];
 end
 
 function [GSA_data] = readGSA(GSA_line)
@@ -97,4 +112,20 @@ HDOP = str2double(GSA_line{17});
 PDOP = str2double(GSA_line{18});
 
 GSA_data = [mode1, mode2, prn, VDOP, HDOP, PDOP];
+end
+
+function [VTG_data] = readVTG(VTG_line)
+VTG_line = VTG_line(strfind(VTG_line, 'VTG'):end);
+VTG_line = split(VTG_line, ',')';
+
+course_over_ground_True = str2double(VTG_line{2});  %실제 진행 방향 (진북 기준) [°]
+course_over_ground_Mag = str2double(VTG_line{4});   %실제 진행 방향 (자북 기준) [°]
+
+speed_knots = str2double(VTG_line{6});  %속도 (노트 단위) [knots]
+speed_kmph = str2double(VTG_line{8});   %속도 (킬로미터/시간)
+
+VTG_data = [course_over_ground_True,...
+            course_over_ground_Mag,...
+            speed_knots,...
+            speed_kmph];
 end

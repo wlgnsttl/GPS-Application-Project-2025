@@ -1,12 +1,21 @@
-function [dnev] = xyz2topo(dxyz, lat, longi)
-%lat,longi(deg)에서의 dxyz를 입력받아 dnev로 반환
+function [dNEV] = xyz2topo(dXYZ, lat_deg, lon_deg)
+% ECEF 차이 벡터를 NEV 좌표계로 변환
+% 입력:
+%   dXYZ     : nx3 차이 벡터
+%   lat_deg  : 기준 위도 [deg]
+%   lon_deg  : 기준 경도 [deg]
+% 출력:
+%   dNEV     : nx3 NEV 벡터 (North, East, Vertical)
 
-%deg2rad
-lat = lat*pi/180;
-longi = longi*pi/180;
+    % 도 → 라디안
+    lat = deg2rad(lat_deg);
+    lon = deg2rad(lon_deg);
 
-R = [-sin(lat)*cos(longi), -sin(lat)*sin(longi), cos(lat);
-    -sin(longi), cos(longi), 0;
-    cos(lat)*cos(longi), cos(lat)*sin(longi), sin(lat)];
+    % NEV 회전 행렬 (ECEF → NEV)
+    R = [-sin(lat)*cos(lon), -sin(lat)*sin(lon),  cos(lat);
+         -sin(lon),           cos(lon),           0;
+          cos(lat)*cos(lon),  cos(lat)*sin(lon),  sin(lat)];
 
-dnev = (R*dxyz')';
+    % 회전 적용
+    dNEV = (R * dXYZ')';
+end

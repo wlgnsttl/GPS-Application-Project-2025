@@ -12,7 +12,7 @@ function [rmse, horErr, verErr, dim3Err] = nev2rmse(dNEV)
     horErr = sqrt(sum(dNEV(:,1:2).^2, 2));
     
     % 수직 오차: 세 번째 열(z)
-    verErr = dNEV(:,3);
+    verErr = abs(dNEV(:,3));
     
     % 3차원 오차: 첫 세 열(x, y, z)의 유클리드 노름 계산
     dim3Err = sqrt(sum(dNEV(:,1:3).^2, 2));

@@ -10,8 +10,8 @@ load('TruePos_RTAP5_250425_0748.mat');
 
 [Lat,Lon,TEC] = ReadGIM('JPL0OPSFIN_20251150000_01D_02H_GIM.INX');
 
-TruePos = TruePos(:,2:4);
-TrueVel = [0 0 0; diff(TruePos)]; % 정지 상태에서 출발 가정
+TrueVel = xyz2vel(TruePos, 0.1, 1);
+TruePos = TruePos(:,2:4); TrueVel = TrueVel(:,2:4);
 
 %% Date 정의
 
@@ -25,13 +25,14 @@ jd2mjd = 2400000.5;
 %% 상수, 변수 정의
 
 CCC = 299792458;
-obsType = 103;
+sys = [100];
+obsType = [103];
 
 Truellh = xyz2gd(TruePos);
 
 %% QM 선별
 
-QM = SelectQM(arrQM, 100, obsType);
+QM = SelectQM(arrQM, sys, obsType);
 FinalTTs = unique(QM(:,1));
 
 %% 추정에 필요한 반복 조건 및 초기값 설정
@@ -129,7 +130,7 @@ for kE = 1:NoEpochs
 end
         
 %% Comp
-estm_vel = [0 0 0; diff(estm(:, 2:4))];
+estm_vel = xyz2vel(estm(:, 1:4), 0.1, 1); estm_vel = estm_vel(:,2:4);
 
 idx = estm(:, 1) ~= 0;
 estm = estm(idx, :); estm_vel = estm_vel(idx, :);
@@ -140,7 +141,8 @@ XYZ = estm(:, 2:4);
 VXYZ = estm_vel(:, 1:3);
 
 NEV = xyz2topo3(XYZ, TruePos);
-VNEV = xyz2topo3(VXYZ, TrueVel);
+VNEV = xyz2topo3(VXYZ + TruePos, TruePos);
+TrueVelNEV = xyz2topo3(TrueVel + TruePos, TruePos);
 
 [rmse, horErr, verErr, dim3Err] = nev2rmse(NEV);
 
@@ -148,4 +150,4 @@ VNEV = xyz2topo3(VXYZ, TrueVel);
 
 close all; clc;
 PlotPosRMSE(TTs, NEV, estm(:,6), estm(:,7), [5 10]);
-PlotVelRMSE(TTs, VNEV, estm(:,6), estm(:,7), [5 10]);
+PlotVelRMSE(TTs, VNEV - TrueVelNEV, estm(:,6), estm(:,7), [5 10]);

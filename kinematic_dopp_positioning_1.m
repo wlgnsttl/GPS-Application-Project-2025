@@ -8,16 +8,16 @@ load('QM_RTAP5_250425_0748.mat');
 load('eph_25115_1.mat');
 load('TruePos_RTAP5_250425_0748.mat');
 
-TruePos = TruePos(:,2:4);
-TrueVel = [0 0 0; diff(TruePos)]; % 정지 상태에서 출발 가정
+TrueVel = xyz2vel(TruePos, 0.1, 1);
+TruePos = TruePos(:,2:4); TrueVel = TrueVel(:,2:4);
 
 %% 상수, 변수 정의        
 
 CCC = 299792458;
 L1_lamda = 0.19029;
 
-sys = 100;
-obsType = 103;
+sys = [100];
+obsType = [103];
 
 % Truellh = xyz2gd(TruePos);
 
@@ -30,13 +30,13 @@ FinalTTs = unique(QM(:,1));
 
 MaxIter = 5;
 EpsStop = 1e-5; 
-x = [TruePos(1,:) 0 0 0 0]; 
+x = [TruePos(1,:), TrueVel(1,:), 0]; 
 x = x';
 
 %% 추정과정 시작
 
 NoEpochs = length(FinalTTs);
-estm = zeros(NoEpochs, 10);
+estm = zeros(NoEpochs, 13);
 nEst = 0;
 MaxSnr = max(QM(:,7));
 for kE = 1:NoEpochs
@@ -48,7 +48,7 @@ for kE = 1:NoEpochs
     for kIter = 1:MaxIter
         H = zeros(NoSats, 7);
         y = zeros(NoSats, 1);
-    
+
         vec_rec_p = x(1:3);
         vec_rec_v = x(4:6);
         
@@ -105,6 +105,14 @@ for kE = 1:NoEpochs
 
         H = H(1:NoSatsUsed, :);
         y = y(1:NoSatsUsed, :);
+
+        Q = H(:, 4:7);
+        Q = inv(Q'*Q);
+        Q = Qxyz2nev(Q, llh(1), llh(2));
+        PDOP = sqrt(Q(1,1) + Q(2,2) + Q(3,3));
+        HDOP = sqrt(Q(1,1) + Q(2,2));
+        VDOP = sqrt(Q(3,3));
+        DOP = [PDOP, HDOP, VDOP];
         
         % 고도각 가중치 
         W_el = 1;
@@ -138,6 +146,7 @@ for kE = 1:NoEpochs
             estm(kE,2:8) = x;
             estm(kE, 9) = NoSats;
             estm(kE, 10) = NoSatsUsed;
+            estm(kE, 11:13) = DOP;
             break
         end
     end
@@ -153,7 +162,8 @@ XYZ = estm(:, 2:4);
 VXYZ = estm(:, 5:7);
 
 NEV = xyz2topo3(XYZ, TruePos);
-VNEV = xyz2topo3(VXYZ, TrueVel);
+VNEV = xyz2topo3(VXYZ + TruePos, TruePos);
+TrueVelNEV = xyz2topo3(TrueVel + TruePos, TruePos);
 
 [rmse, horErr, verErr, dim3Err] = nev2rmse(NEV);
 
@@ -161,4 +171,4 @@ VNEV = xyz2topo3(VXYZ, TrueVel);
 
 close all; clc;
 PlotPosRMSE(TTs, NEV, estm(:,9), estm(:,10), [1500 3000]);
-PlotVelRMSE(TTs, VNEV, estm(:,9), estm(:,10), [5 10]);
+PlotVelRMSE(TTs, VNEV - TrueVelNEV, estm(:,9), estm(:,10), [5 10]);

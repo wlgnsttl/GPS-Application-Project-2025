@@ -4,16 +4,17 @@ clc;
 addpath(genpath("data/"));
 addpath(genpath("functions/"));
 
-load('QM_ihub_0417.mat');
-load('eph_0419_rapid.mat');
-load('TruePos_ihub.mat');
+% 데이터 로드
+load('QM_GAMGKOR.mat');
+load('eph_24.mat');
+load('TruePos_GAMGKOR.mat');
 
 %% 상수, 변수 정의
 
 CCC = 299792458;
 L1_lamda = 0.19029;
 
-sys = 100;
+sys = [100 400];
 obsType = 103;
 
 Truellh = xyz2gd(TruePos);
@@ -33,7 +34,7 @@ x = x';
 %% 추정과정 시작
 
 NoEpochs = length(FinalTTs);
-estm = zeros(NoEpochs, 7);
+estm = zeros(NoEpochs, 13);
 nEst = 0;
 MaxSnr = max(QM(:,7));
 
@@ -61,6 +62,10 @@ for kE = 1:NoEpochs
             tc = gs - STT;
     
             ieph  = PickEPH_multi(eph,prn,gs);
+
+            if ieph == 0
+                continue;
+            end
             
             if eph(ieph, 19) > 0
                 continue;
@@ -90,6 +95,8 @@ for kE = 1:NoEpochs
             % snr 저장
             matrix_snr(NoSatsUsed,:) = QM1e(kS,7);
             
+            Q(NoSatsUsed, :) = [h', 1];
+
             H(NoSatsUsed,:) = [gt, 1];
             y(NoSatsUsed) = obs_dopp - com;
         end
@@ -100,6 +107,14 @@ for kE = 1:NoEpochs
         
         H = H(1:NoSatsUsed, :);
         y = y(1:NoSatsUsed, :);
+        
+        Q = Q(1:NoSatsUsed, :);
+        Q = inv(Q'*Q);
+        Q = Qxyz2nev(Q, Truellh(1), Truellh(2));
+        PDOP = sqrt(Q(1,1) + Q(2,2) + Q(3,3));
+        HDOP = sqrt(Q(1,1) + Q(2,2));
+        VDOP = sqrt(Q(3,3));
+        DOP = [PDOP, HDOP, VDOP];
         
         % 고도각 가중치 
         W_el = 1;
@@ -130,9 +145,11 @@ for kE = 1:NoEpochs
 
             nEst = nEst + 1;
             estm(nEst,1) = gs;
-            estm(nEst,2:5) = x;
-            estm(nEst, 6) = NoSats;
-            estm(nEst, 7) = NoSatsUsed;
+            estm(nEst,2:4) = x(1:3);
+            estm(nEst, 8) = x(4);
+            estm(nEst, 9) = NoSats;
+            estm(nEst, 10) = NoSatsUsed;
+            estm(nEst, 11:13) = DOP;
             break
         end
     end
@@ -150,7 +167,7 @@ NEV = xyz2topo2(XYZ, TruePos);
 %% Figure
 
 close all; clc;
-PlotPosRMSE(TTs, NEV, estm(:,6), estm(:,7), [500 1000]);
+PlotPosRMSE(TTs, NEV, estm(:,9), estm(:,10), [500 1000]);
 
 %% Console disp
 

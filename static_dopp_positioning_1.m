@@ -5,16 +5,16 @@ addpath(genpath("data/"));
 addpath(genpath("functions/"));
 
 % 데이터 로드
-load('QM_ihub_0417.mat');
-load('eph_0419_rapid.mat');
-load('TruePos_ihub.mat');
+load('QM_GAMGKOR.mat');
+load('eph_24.mat');
+load('TruePos_GAMGKOR.mat');
 
 %% 상수, 변수 정의
 
 CCC = 299792458;
 L1_lamda = 0.19029;
 
-sys = 100;
+sys = [100 400];
 obsType = 103;
 
 Truellh = xyz2gd(TruePos);
@@ -34,7 +34,7 @@ x = x';
 %% 추정과정 시작
 
 NoEpochs = length(FinalTTs);
-estm = zeros(NoEpochs, 9);
+estm = zeros(NoEpochs, 13);
 nEst = 0;
 MaxSnr = max(QM(:,7));
 
@@ -57,8 +57,12 @@ for kE = 1:NoEpochs
             obs_dopp = QM1e(kS,6) * -L1_lamda;
     
             ieph  = PickEPH_multi(eph,prn,gs);
+
+            if ieph == 0
+                continue;
+            end
             
-            if eph(ieph, 19) > 0
+            if eph(ieph, 19) > 0 
                 continue;
             end  
 
@@ -100,6 +104,14 @@ for kE = 1:NoEpochs
         H = H(1:NoSatsUsed, :);
         y = y(1:NoSatsUsed, :);
         
+        Q = H(:, 4:7);
+        Q = inv(Q'*Q);
+        Q = Qxyz2nev(Q, Truellh(1), Truellh(2));
+        PDOP = sqrt(Q(1,1) + Q(2,2) + Q(3,3));
+        HDOP = sqrt(Q(1,1) + Q(2,2));
+        VDOP = sqrt(Q(3,3));
+        DOP = [PDOP, HDOP, VDOP];
+
         % 고도각 가중치 
         W_el = 1;
         W_el = WeightEl(matrix_el);
@@ -130,6 +142,7 @@ for kE = 1:NoEpochs
             estm(nEst,2:8) = x;
             estm(nEst, 9) = NoSats;
             estm(nEst, 10) = NoSatsUsed;
+            estm(nEst, 11:13) = DOP;
             break
         end
     end
@@ -146,7 +159,7 @@ VXYZ = estm(:, 5:7);
 
 NEV = xyz2topo2(XYZ, TruePos);
 
-VNEV = xyz2topo2(VXYZ, [0 0 0]);
+VNEV = xyz2topo2(VXYZ + TruePos, TruePos);
 
 [rmse, horErr, verErr, dim3Err] = nev2rmse(NEV);
 
